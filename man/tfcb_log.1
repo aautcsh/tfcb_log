@@ -1,0 +1,121 @@
+.TH TFCB_LOG 1 LOCAL
+
+.SH tfcb_log
+tfcb_log - a tiny static blog generator including nice script handled features.
+
+.SH SYNOPSIS
+.B ./bin/make [option]
+.br
+
+.I option
+.br
+
+.B [" 
+.I i w b t a ad am ai 
+.B ..."]
+
+.SH AVAILABILITY
+tfcb_log is available and tested under *BSD, Linux (Gentoo-2.6.31), Mac OS X (10.7.3)
+
+.SH DESCRIPTION
+tfcb_log watches an inbox folder for incoming plain text files. if you put some content in there the files will be grabbed and enveloped to a date-sorted blog post structure. for each day a folder will created and symlinked to './latest' dir. an index.html and rss.xml output will saved in ./out 
+
+.SH OPTIONS
+options for the ``
+.I ./bin/make
+`` script
+
+.TP 
+i
+.I (init) 
+- initializes the entire blog structure.
+.TP 
+w
+.I (watch) 
+- activate the watched inbox folder.
+.TP 
+b
+.I (build) 
+- grab content within the inbox and generate blog post.
+.TP 
+t
+.I (transfer) 
+- transfers content from ``out'' dir via scp.
+.TP 
+a
+.I (archive) 
+- backup the ``posts'' folder (default = daily).
+.TP 
+ad
+.I (archive) 
+- same as ``a'' with daily t_stamp.
+.TP 
+am
+.I (archive) 
+- same as ``a'' with monthly t_stamp.
+.TP 
+ai
+.I (archive) 
+- do incremental backup of your ``posts'' folder.
+.TP 
+h
+.I (help) 
+- print help screen to stdout.
+
+.SH EXAMPLES 
+.br
+Installation & processing example: 
+
+.br
+.B demo:tfcb_log$ cd src; make install clean init 
+.br
+.I ... (<y> ; <n>)
+.br
+
+.B demo:src$ echo "Hello, World." >> ../inbox/foo.txt 
+.br
+.B demo:src$ cd ../bin ; ./make b
+.br
+.I ... 
+
+.SH NOTES
+.I Note:
+none of the executables (bin/make, genblog) is copied into /usr/bin, hence you have to browse to you install location and start the make script directly from the ``bin'' directory.
+.br
+
+.I !!! Please do not copy the executables into another place by yourself. It will screw the blog because of the symlink foo. !!! 
+.br
+
+In future versions a "fully-functional" installation is preferred.
+
+.SH MESSAGES AND EXIT CALLS
+The error-handling within the ``core'' generating process in done by the ``
+.I panic()
+`` function, which returns different opcodes, depending on the source of the error being dropped.
+
+The opcode section is still under construction.
+
+.SH SEE ALSO
+You may check the 
+.I "tbe.tex" 
+file within the main directory for a detailed 
+.br 
+.B ``by example'' 
+description of the thing, such as how to activate the watched inbox (in background) and change the blog-template, that'll be rendered. You may also want to take a look into the 
+.I README 
+file.
+
+.SH BUGS
+There is a known issue up to version 0.6.1 within the ``
+.I *r_ftob()
+`` calling functions. The returned (heap-allocated) buffers are _not_ gonna freed. For some strange reason the html output gets screwed, if they get freed correctly. 
+.br
+
+.I This is not confirmed as a security related issue (, yet).
+
+There is a known issue up to version 0.6.1 within the ``
+.I scandir()
+`` calling functions that leads to unfreed memory blocks at the end of the program.  
+
+.SH AUTHOR
+Aautcsh, nosrv.org 
