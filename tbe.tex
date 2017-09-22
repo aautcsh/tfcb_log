@@ -1,0 +1,132 @@
+% LaTeX sources for introducing tfcb_log.
+%
+% dl@nosrv.org
+\documentstyle[11pt]{article}
+% Default margins are too wide all the way around.  I reset them here
+\setlength{\topmargin}{-.5in}
+\setlength{\textheight}{9in}
+\setlength{\oddsidemargin}{.125in}
+\setlength{\textwidth}{6.25in}
+\begin{document}
+\title{tfcb\_log By Example}
+\author{$\Lambda$autcsh \\
+\^\-C\^\-C\^\-C\^\-XquitqQq!dammit[esc]qwertyuiopasdfghjkl;:xwhat}
+\renewcommand{\today}{March 3, 2012}
+\maketitle
+This paper demonstrates the installation and initialization process for tfcb\_log (v0.5.4). In addition to that, two stupid little use-cases were shown at the end of this document. 
+\section {vi conf}
+Edit the following variables within \texttt{/bin/make} to your own needs.
+{\quotation \begin{tabular}{ll}
+\texttt{WATCH\_DELAY\_SEC} (30)&- regulates the sleep timer, before the inbox is grabbed for input\\ 
+&(watched mode).\\
+\texttt{WATCH\_ONCE} (0)&- if set to ``1'', watching will stop after the first data was found.\\ 
+&(watched mode).\\
+\texttt{OUTPUT\_TRANSFER} (0)&- if set to ``1'', the transfer gets autom. triggered after the build process.\\
+\texttt{OUTPUT\_LOGGING} (0)&- if set to ``1'', all the crap gets logged.\\
+&(not implemented, yet!)\\
+\texttt{BLOG\_HOST}&- defines your scp node.\\
+\texttt{BLOG\_PORT}&- defines the listening port of your scp node.\\
+\texttt{BLOG\_USER}&- your remote login username.\\
+\texttt{BLOG\_PATH}&- remote path to your desired location.
+\end{tabular}}
+\newline\\\\
+Edit the following variables within \texttt{/src/global.h} to your own needs.
+{\quotation \begin{tabular}{ll}
+\texttt{TMPL\_NAME} (main)&- set to your favourite template.\\
+&(``main'', ``minimalistic'')\\
+\end{tabular}}
+\newline\\
+\section {Compilation}
+To start the compilation, follow these steps:\\\\
+\texttt{cd src\\ make install clean\\\\}
+The code will be compiled and the binary moves to \texttt{/}.
+\\
+In order to install the man page for tfcb\_log, please cp the ``tfcb\_log.1'' file within the src directory to into ``/usr/local/share/man/man1/'' by yourself.
+\newpage
+\texttt{make init\\\\}
+This triggers the \texttt{/bin/make} script in order to initialize the required folder-structure. 
+Here is the complete list of folder that {\em tfcb\_log} is going to create:\\
+{\quotation \begin{tabular}{ll}
+{\em arch}&- backup folder.\\
+{\em inbox}&- the postman will grab your plainfiles here.\\
+{\em posts}&- main node for the blog content.\\
+{\em out}&- output folder for HTML \& CSS.\\
+{\em latest}&- symlink to the newest folder under ``{\em posts/*}''.\\
+{\em log}&- logfiles (not yet implemented).
+\end{tabular}}
+\bigskip\bigskip\newline
+Afterwards the init script will ask you to activate the watched inbox. The nasty thing about that is, it will not start in the background. So at least, I prefer to say ``\texttt{n}'' in this case and activate it via ``\texttt{screen -m -d ./make w}''. I know this is an ugly workaround a for real process/thread-mgmt. But things happen and so you got to get happy with this.
+\newline
+\section {Synopsis}
+{\quotation \begin{tabular}{ll}
+\texttt{i } (init)&- initialize the entire blog.\\
+\texttt{w } (watch)&- activate watched inbox.\\
+\texttt{b } (build)&- build content from the inbox.\\
+\texttt{t } (transfer)&- transfer content to your desired scp node.\\
+\texttt{a } (archive)&- archive ``{\em posts/*}'' folder.\\
+&(default ``daily'')\\
+\texttt{ad} (archive)&- archive ``{\em posts/*}'' folder.\\
+&(``daily'')\\
+\texttt{am} (archive)&- archive ``{\em posts/*}'' folder.\\
+&(default ``monthly'')\\
+\texttt{ai} (archive)&- archive ``{\em posts/*}'' folder.\\
+&(default ``incremental'')\\
+\texttt{h } (help)&- prints help screen to stdout.\\
+\end{tabular}}
+\newline
+\section {Echo -e "foo"}
+Let's manually build some output by example:\\
+\newline\texttt{
+demo:tfcb\_log dl\$ echo "Hello, World." >> inbox/foo.txt
+\newline
+demo:tfcb\_log dl\$ cd bin/; ./make b
+\\ ...
+\newpage
+-------------------------------
+\\ tfcb\_log: administration script
+\\ -------------------------------
+\\ Version: 0.5.4 (2012-03-02) 
+\\
+\\ ii: check for latest softlink.
+\\ ok: found today's folder.
+\\ ii: moving blog post.
+\\ ok: suceeded.
+\\ ii: build output.
+\\
+\\ ii:	 HTML PROCESSING
+\\
+\\ ii:	 build index.html
+\\ ok:	 write header.
+\\ ok:	 begin to append posts.
+\\ ii:	 appending post:
+\\ ok:	 done.
+\\ ok:	 all posts appended.
+\\ ii:	 write footer.
+\\ ok:	 built index.html, shalalala.
+\\
+\\ ii:	 RSS PROCESSING
+\\
+\\ ii:	 build rss.xml
+\\ ok:	 write header.
+\\ ok:	 begin to append elements.
+\\ ii:	 appending element.
+\\ ok:	 done.
+\\ ok:	 all elements appended.
+\\ ii:	 write footer.
+\\ ok:	 built rss.xml, shalalala.
+\\
+\\ ok: succeeded.
+\\ ok: nothing left to do.
+}
+\newpage
+\section {Hit me!}
+{\em TODO}\\
+\bigskip\bigskip\newline
+---dley, March 2012
+{\quotation\
+{\em Because C is my scripting language}\\
+\author FETTEMAMA.ORG (2012)}
+% International Herald Tribune, 22 May 1974, p8
+\vfill\eject
+\end{document}
+

@@ -1,0 +1,101 @@
+-----
+TITLE
+-----
+
+	tfcb_log - nifty little inbox based blog generator
+ 
+	"Blogging system written in C. Because C is my scripting language!"
+	- Jarosław S.
+
+-------
+VERSION
+-------
+0.6.1 (2012-03-02)
+
+Currently tested under: Mac OSX 10.7.3, FreeBSD 8.2, GNU/Linux (Gentoo-2.6.32), Debian GNU/Linux
+
+-----------
+DESCRIPTION
+-----------
+	
+	tfcb_log watches an inbox folder for incoming plain text files. if you put some content in there the files will be grabbed and enveloped to a date-sorted blog post structure. for each day a folder will created and symlinked to './latest' dir. an index.html and rss.xml output will saved in ./out 
+
+------------
+INSTALLATION
+------------
+
+	1) Run src/make all
+			- the entire sourcecode gets compiled. afterwards the 'bin/make init' will automatically trigger the initialization process, which organizes the needed folder structure. in addition to that, a "Hello, World!" blog post will be generated with the actual date. 
+			- after completion you will be asked to activate the watched inbox. do so to get the live thing running.
+
+	NOTE:
+		tfcb_log is going to create the following folder structure:
+		
+		./arch		- backup folder
+		./inbox		- watched folder.
+		./posts		- posts archive. (automatically handled)
+		./log			- logs
+		./out			- output folder for index.html / rss.xml
+		./latest 	- symlink to -> ./posts/__newest_folder__
+
+ 	NOTE:
+		In order to install the man page for tfcb_log, please cp the 'tfcb_log.1' file within the src directory to into '/usr/local/share/man/man1/' by yourself."
+
+--------
+SYNOPSIS
+--------
+
+	- bin/make
+    	* i  (init)			- start the initialization process.
+			* w  (watch)		- activate watched inbox.
+    	* b  (build)		- generate output by grabbing the inbox.
+    	* t  (transfer)	- transfer content to your designated node (via scp).
+			* a  (archive)	- archive posts folder (default=day).
+			* ad (archive)	- archive posts folder (t_stamp day).
+			* am (archive)	- archive posts folder (t_stamp month).
+    	* ai (archive)	- archive incrementally.
+    	* h  (help)			- print this screen.
+
+-----
+USAGE
+-----
+	- activate watched folder in background:
+		run 'screen -d -m ./make watch'
+	- return to the process:
+		run 'screen -r [pid].tty.host'
+
+	NOTE:
+		you may want to take a look into ``tbe.tex'' for a detailed ``by example'' description for using this thing.
+
+----
+TODO
+----
+[-] fix the "guid" field rendering. the host-string ist printed on each begin of this field.
+[-] improve the panic() function - define err opcodes. manace error handling within the code-flow			
+[-] detect new lines within post files and replace them against <br>
+[-] link the stupid [l] to single file posts
+[-] comments over telnet :]
+[-] link to the items not to the main page
+[-] get the title somehow right (removing html tags)
+
+------------
+CONTRIBUTORS
+------------
+	- dley <dl@nosrv.org>
+		- author.
+	- ohaucke <oh@gadean.de>
+		- html/css templating and additional works. -thank you!
+	- ts <ts@nosrv.org>
+		- GNU/Linux testing. -thank you!
+
+--------------------------------
+REFERENCE TO IT'S ORIGINAL AUTHOR
+---------------------------------
+
+by Jarosław Szpilewski
+jszpilewski at me dot com
+
+License (posts): Draconic BELONGS TO ME YOU MAY NOT USE IT License
+
+\m/ HAIL SATAN \m/
+
