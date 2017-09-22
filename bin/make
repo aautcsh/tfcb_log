@@ -1,0 +1,272 @@
+#!/bin/sh
+
+#	tfcb_log - nifty little inbox based blog generator
+#	dl@nosrv.org
+
+VERSIONNR=0.6.1
+MODDATE=2012-03-05
+SYS_UNAME=$(uname)
+
+TSTAMP_DIR=$(date +%Y-%m-%d)
+
+### DIRECTORIES
+ROOT_DIR=$(pwd) ; cd $ROOT_DIR/.. ; ROOT_DIR=$(pwd)
+WATCH_DIR="inbox"
+POSTS_DIR="posts"
+LATEST_DIR="latest"
+OUTPUT_DIR="out"
+BACKUP_DIR="arch"
+BACKUP_BIN=$POSTS_DIR-
+BUILD_DIR=$ROOT_DIR
+BUILD_BIN="genblog"
+LOG_DIR="log"
+
+### SLEEPING DELAY
+WATCH_DELAY_SEC=30
+
+### SWITCHES - 1 = HIT ME! ; 0 = DO NOTHING
+OUTPUT_BUILD=1
+OUTPUT_TRANSFER=0
+OUTPUT_LOGGING=0
+WATCH_ONCE=0 
+
+### SCP CONFIGURATION
+BLOG_HOST=b
+BLOG_PORT=l
+BLOG_USER=u
+BLOG_PATH=b
+
+### TAR CONFIGURATION
+BCK_FORMAT=tbz2
+BCK_EXCLUDES="--exclude=.svn  --exclude=.DS_Store" 
+BCK_FLAGS="$BCK_EXCLUDES -jpvf"
+BCK_INCLUDES="$POSTS_DIR"
+
+### FUNCTION DEFINITIONS
+banner(){
+	clear
+	echo "-------------------------------"
+	echo "tfcb_log: administration script"
+	echo "-------------------------------"
+	echo "Version: $VERSIONNR ($MODDATE)"
+	echo ""
+}
+
+help() {
+	echo -e "usage: $0 <option>"
+  echo -e "\t i  (init)\t- start the initialization process."
+	echo -e "\t w  (watch)\t- activate watched inbox."
+  echo -e "\t b  (build)\t- generate output by grabbing the inbox."
+	echo -e "\t t  (transfer)\t- transfer content to your designated node (via scp)."
+	echo -e "\t a  (archive)\t- archive posts folder (default=day)."
+	echo -e "\t ad (archive)\t- archive posts folder (t_stamp day)."
+	echo -e "\t am (archive)\t- archive posts folder (t_stamp month)."
+  echo -e "\t ai (archive)\t- archive incrementally."
+  echo -e "\t h  (help)\t- print this screen.\n"
+	exit
+}
+
+init(){
+	cd $ROOT_DIR
+	echo "!! INITIAL SETUP STARTED !!"
+	echo "---------------------------"
+	echo "Warning: All existent content will be deleted by the following structure:"
+	echo ""
+	echo -e "ROOT DIRECTORY:\t $ROOT_DIR/"
+	echo -e "./$BACKUP_DIR:\t - backup folder."
+	echo -e "./$WATCH_DIR\t - watched folder."
+	echo -e "./$POSTS_DIR\t - posts folder."
+	echo -e "./$OUTPUT_DIR\t - outgoing folder."
+	echo -e "./$LATEST_DIR\t - latest folder."
+	echo -e "./$LOG_DIR\t - log folder."
+	echo ""
+	echo "The old index.html will get lost"
+	echo ""
+
+	read -p "Do you want to continue? (y/n): " -r REPLY
+	if [ "$REPLY" = "y" ]; then
+		echo ""
+    	echo "ii: creating ./$POSTS_DIR directory."
+		mkdir -p $POSTS_DIR
+	
+		echo "ii: creating ./$LATEST_DIR directory."
+		mkdir -p $POSTS_DIR/$TSTAMP_DIR 
+		if [ -d $ROOT_DIR/$LATEST_DIR ]; then
+			rm -rf $ROOT_DIR/$LATEST_DIR;
+		fi
+		ln -s $POSTS_DIR/$TSTAMP_DIR $LATEST_DIR
+		
+		echo "ii: creating ./$WATCH_DIR directory."
+		mkdir -p $WATCH_DIR
+
+		echo "ii: creating ./$BACKUP_DIR directory."
+		mkdir -p $BACKUP_DIR
+		
+		echo "ii: creating ./$OUTPUT_DIR directory and raw index files."
+		mkdir -p $OUTPUT_DIR
+		cp -ap templates/main/index.html.example $OUTPUT_DIR/index.html && cp -ap templates/rss/rss.xml.example  $OUTPUT_DIR/rss.xml
+		
+		echo -e "Hello, World!\nHave fun and profit." >> $POSTS_DIR/$TSTAMP_DIR/00.post
+		echo "ii: creating ./$LOG_DIR directory."
+		mkdir -p $LOG_DIR
+		
+		echo "ii: setting permissions."
+		chmod -R 744 ./*
+		
+		echo""
+		echo "!! INSTALLATION SUCCEEDED!! "
+		echo "In order to activate the watched-inbox you have to run './bin/make watch' and put some plain textfile into the ./inbox folder"
+		echo ""
+		echo "You may then want to take a look into 'bin/genblog' in order to generate the new content - OR SET THE OUTPUT_BUILD VARIABLE TO 1."
+		echo ""
+		echo "...it is pretty ugly but functional."
+		echo ""
+		echo "Otherwise just READ THE FUCKING MANUAL - which in this case is the README file."
+		echo -e "\n\n"
+
+		read -p "Watch your inbox for incoming files? (y/n): " -r REPLY	
+		if [ "$REPLY" = "y" ]; then
+			watch
+		fi
+		echo ""
+	else
+		echo""
+		echo "ii: setup stopped at your request. it's probably the best idea."
+		exit
+	fi
+}
+
+watch(){
+	cd $ROOT_DIR
+	while [ 1 ]; do
+		banner && echo "ii: waiting for incoming files at '$ROOT_DIR/$WATCH_DIR'." ; CNT=0
+		if [ "$SYS_UNAME" = "FreeBSD" ]; then
+			CNT=$(ls $WATCH_DIR/ | wc -l | tr -d ' ')
+			CNT=${CNT#}
+		else
+			CNT=$(ls $WATCH_DIR/ | wc -l)
+			CNT="${CNT#"${CNT%%[![:space:]]*}"}"
+		fi
+		if [ $CNT -eq 0 ]; then
+			sleep $WATCH_DELAY_SEC
+		else
+			echo "ok: file received."
+			update; sleep 2
+			if [ $WATCH_ONCE -eq 1 ]; then
+				break
+			fi
+		fi
+	done
+}
+
+update(){
+	TSTAMP_DIR=$(date +%Y-%m-%d)
+	cd $ROOT_DIR
+	if [ "$SYS_UNAME" = "FreeBSD" ]; then
+		CNT=$(ls $WATCH_DIR/ | wc -l | tr -d ' ')
+		CNT=${CNT#}
+	else
+		CNT=$(ls $WATCH_DIR/ | wc -l)
+		CNT="${CNT#"${CNT%%[![:space:]]*}"}"
+	fi
+	if [ $CNT -eq 0 ]; then
+		echo -e "ee: no content."
+		exit
+	fi
+
+	cd $ROOT_DIR && cat $WATCH_DIR/* > $WATCH_DIR/bar.f
+	cd $POSTS_DIR
+	echo "ii: check for latest softlink."
+	
+	if [ -d $TSTAMP_DIR ]; then
+		cd $ROOT_DIR/$LATEST_DIR
+		echo "ok: found today's folder."
+		echo "ii: moving blog post."
+		
+		CNT=0;
+		if [ "$SYS_UNAME" = "FreeBSD" ]; then
+			CNT=$(ls | wc -l | tr -d ' ')
+			CNT=${CNT#}
+		else
+			CNT=$(ls | wc -l)
+			CNT="${CNT#"${CNT%%[![:space:]]*}"}"
+		fi
+		if [ $CNT -lt 10 ]; then
+			mv $ROOT_DIR/$WATCH_DIR/bar.f $ROOT_DIR/$LATEST_DIR/'0'$CNT'.post' ; rm -rf $ROOT_DIR/$WATCH_DIR/*
+		else
+			mv $ROOT_DIR/$WATCH_DIR/bar.f $ROOT_DIR/$LATEST_DIR/$CNT'.post' ; rm -rf $ROOT_DIR/$WATCH_DIR/*		
+	fi
+		echo "ok: suceeded."
+	else
+		cd $ROOT_DIR
+		echo "ii: softlink outdated."
+		echo "ii: going to create today's folder."
+		rm $LATEST_DIR 
+		cd $POSTS_DIR 
+		mkdir $TSTAMP_DIR 
+		cd $ROOT_DIR
+		ln -s $POSTS_DIR/$TSTAMP_DIR $LATEST_DIR
+		echo "ok: succeeded."
+		echo "ii: moving blog post."
+		mv $ROOT_DIR/$WATCH_DIR/bar.f $ROOT_DIR/$LATEST_DIR/'00.post' ; rm -rf $ROOT_DIR/$WATCH_DIR/*
+		echo "ok: succeeded."
+	fi
+	if [ $OUTPUT_BUILD -eq 1 ]; then
+		build
+	fi
+	if [ $OUTPUT_LOGGING -eq 1 ]; then
+		log
+	fi
+	if [ $OUTPUT_TRANSFER -eq 1 ]; then
+		transfer	
+	fi
+}
+
+build(){
+	cd $ROOT_DIR
+	echo "ii: build output."
+	cd $BUILD_DIR
+	./$BUILD_BIN hitme
+	echo "ok: succeeded."
+}
+
+transfer(){
+	cd $ROOT_DIR
+	echo "ii: transfer output to server."
+	scp -P $BLOG_PORT $OUTPUT_DIR/* $BLOG_USER@$BLOG_HOST:$BLOG_PATH
+	echo "ok: succeeded."
+}
+
+log(){
+	cd $ROOT_DIR
+	echo "<!-- latest update: $(date) -->" >> $LOG_DIR/'log_'$TSTAMP_DIR 
+}
+
+backup() {
+	cd $ROOT_DIR
+	if [ ! -d $POSTS_DIR ]; then
+		echo -e "ee: couldn't find '$POSTS_DIR' folder... going to exit."
+		exit
+	fi
+	BACKUP_BIN=$BACKUP_DIR/$POSTS_DIR-$TSTAMP_BCK.$BCK_FORMAT 
+	echo -e "ii: going to archive $POSTS_DIR to $BACKUP_BIN"
+	tar -c $BCK_FLAGS $BACKUP_BIN $BCK_INCLUDES
+	echo -e "ok: succeeded."
+}
+### END OF FUNCTION DEFINITIONS
+### MAIN SWITCH
+banner
+case "$1" in
+	i) 	init ;;
+	w) 	watch ;;
+	b) 	WATCH_ONCE=1 ; update ;;
+	t)	transfer ;;
+	a)	TSTAMP_BCK=$(date +%Y%m%d) ; backup	;;
+	ad)	TSTAMP_BCK=$(date +%Y%m%d) ; backup	;;
+	am)	TSTAMP_BCK=$(date +%Y%m) ; backup 	;;
+	ai)	TSTAMP_BCK="incr" ; backup	;;
+	*)	help ;;
+esac
+echo "ok: nothing left to do."
+exit
+
